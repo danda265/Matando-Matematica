@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Commander — Jogo Educacional</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #00f5ff;
+    --cyan-dim: #0099aa;
+    --green: #00ff88;
+    --red: #ff3355;
+    --gold: #ffd700;
+    --panel: #050d1a;
+    --panel2: #0a1628;
+    --border: #1a4060;
+    --glow-cyan: 0 0 10px #00f5ff, 0 0 20px #00f5ff44;
+    --glow-green: 0 0 10px #00ff88, 0 0 20px #00ff8844;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { 
+    background:#000; 
+    font-family:'Rajdhani',sans-serif; 
+    overflow:hidden; 
+    height:100vh; 
+    display:flex; 
+    flex-direction:column;
+    user-select:none;
+  }
+
+  /* ===== SETUP SCREEN ===== */
+  #setup-screen {
+    position:fixed; inset:0;
+    background: radial-gradient(ellipse at center, #050d1a 0%, #000 70%);
+    display:flex; align-items:center; justify-content:center;
+    z-index:100;
+    flex-direction:column;
+    gap:0;
+  }
+  #setup-screen::before {
+    content:'';
+    position:absolute; inset:0;
+    background: 
+      radial-gradient(2px 2px at 20% 30%, #ffffff22 0%, transparent 50%),
+      radial-gradient(2px 2px at 80% 20%, #ffffff33 0%, transparent 50%),
+      radial-gradient(1px 1px at 60% 70%, #ffffff44 0%, transparent 50%),
+      radial-gradient(1px 1px at 10% 80%, #ffffff22 0%, transparent 50%);
+    pointer-events:none;
+  }
+
+  .setup-card {
+    background: linear-gradient(135deg, #0a1628 0%, #050d1a 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 50px 60px;
+    width: 500px;
+    box-shadow: 0 0 60px #00f5ff22, inset 0 1px 0 #1a4060;
+    position:relative;
+  }
+  .setup-card::before {
+    content:'';
+    position:absolute; top:0; left:20%; right:20%; height:1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  }
+
+  .setup-logo {
+    font-family:'Orbitron',sans-serif;
+    font-size:2rem; font-weight:900;
+    color:var(--cyan);
+    text-shadow: var(--glow-cyan);
+    text-align:center;
+    letter-spacing:4px;
+    margin-bottom:6px;
+  }
+  .setup-sub {
+    text-align:center; color:#4a7a9b; font-size:1rem;
+    letter-spacing:2px; text-transform:uppercase;
+    margin-bottom:40px;
+  }
+
+  .form-group { margin-bottom:22px; }
+  .form-label {
+    display:block; color:var(--cyan-dim);
+    font-size:0.85rem; letter-spacing:2px;
+    text-transform:uppercase; margin-bottom:8px;
+    font-family:'Orbitron',sans-serif;
+  }
+  .form-input {
+    width:100%; padding:12px 16px;
+    background:#010a14; border:1px solid var(--border);
+    color:#fff; font-family:'Rajdhani',sans-serif;
+    font-size:1.1rem; border-radius:8px;
+    outline:none; transition:border-color .2s, box-shadow .2s;
+  }
+  .form-input:focus {
+    border-color:var(--cyan);
+    box-shadow: 0 0 8px #00f5ff44;
+  }
+
+  .year-grid {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+  }
+  .year-btn {
+    padding:14px 8px; background:#010a14;
+    border:1px solid var(--border);
+    color:#6a9ab0; font-family:'Orbitron',sans-serif;
+    font-size:0.95rem; cursor:pointer; border-radius:8px;
+    transition:all .15s; position:relative; overflow:hidden;
+  }
+  .year-btn:hover { border-color:var(--cyan-dim); color:var(--cyan); }
+  .year-btn.active {
+    border-color:var(--cyan); color:var(--cyan);
+    background:#001a2a;
+    box-shadow: var(--glow-cyan);
+  }
+  .year-btn .year-label { font-size:0.65rem; display:block; color:#4a7a9b; margin-top:3px; }
+  .year-btn.active .year-label { color:#00c8d4; }
+
+  .btn-start {
+    width:100%; padding:18px;
+    background: linear-gradient(135deg, #006644, #00ff88);
+    border:none; border-radius:10px;
+    color:#000; font-family:'Orbitron',sans-serif;
+    font-size:1.1rem; font-weight:700; letter-spacing:3px;
+    cursor:pointer; margin-top:30px;
+    transition:all .2s;
+    box-shadow: 0 0 20px #00ff8844;
+  }
+  .btn-start:hover { transform:translateY(-2px); box-shadow: var(--glow-green); }
+  .btn-start:active { transform:translateY(0); }
+
+  /* ===== GAME SCREEN ===== */
+  #game-screen {
+    display:none; height:100vh; flex-direction:row;
+  }
+  #game-screen.active { display:flex; }
+
+  /* === CANVAS AREA === */
+  #game-area {
+    flex:1; position:relative; overflow:hidden;
+  }
+  canvas#space {
+    position:absolute; inset:0; width:100%; height:100%;
+  }
+
+  /* HUD overlay */
+  .hud {
+    position:absolute; top:0; left:0; right:0;
+    padding:12px 20px;
+    background: linear-gradient(180deg, #00000088 0%, transparent 100%);
+    display:flex; align-items:center; gap:20px;
+    z-index:10;
+  }
+  .hud-player {
+    font-family:'Orbitron',sans-serif;
+    color:var(--cyan); font-size:0.9rem;
+    text-shadow: var(--glow-cyan);
+  }
+  .hud-sep { color:#1a4060; }
+  .hud-stat { font-size:0.9rem; color:#8ab0c0; }
+  .hud-val { color:#fff; font-family:'Orbitron',sans-serif; font-size:1rem; margin-left:4px; }
+  .hud-val.score-val { color:var(--gold); text-shadow: 0 0 8px #ffd70088; }
+  .hud-lives { display:flex; gap:4px; align-items:center; }
+  .hud-heart { font-size:1.1rem; filter: drop-shadow(0 0 4px #ff3355); }
+  .hud-heart.empty { opacity:0.2; filter:none; }
+  .hud-spacer { flex:1; }
+  .btn-menu {
+    padding:6px 14px;
+    background:transparent; border:1px solid #1a4060;
+    color:#4a7a9b; font-family:'Orbitron',sans-serif;
+    font-size:0.7rem; letter-spacing:1px;
+    cursor:pointer; border-radius:6px;
+    transition:all .2s;
+  }
+  .btn-menu:hover { border-color:var(--red); color:var(--red); box-shadow:0 0 8px #ff335533; }
+
+  /* Question banner */
+  #year-badge-bar {
+    position:absolute; top:50px; left:50%; transform:translateX(-50%);
+    font-family:'Orbitron',sans-serif; font-size:0.7rem; letter-spacing:2px;
+    color:#1a5a6a; text-transform:uppercase; pointer-events:none; z-index:10;
+  }
+
+  /* === RIGHT PANEL === */
+  #panel {
+    width:320px; background:var(--panel);
+    border-left:1px solid var(--border);
+    display:flex; flex-direction:column;
+    padding:20px; gap:16px;
+    position:relative; overflow:hidden;
+  }
+  #panel::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  }
+
+  /* Display */
+  #answer-display {
+    background:#000; border:2px solid var(--cyan);
+    border-radius:8px; padding:16px 20px;
+    text-align:right;
+    font-family:'Orbitron',sans-serif;
+    font-size:2.2rem; color:var(--green);
+    min-height:72px; line-height:1;
+    box-shadow: inset 0 0 20px #00000088, 0 0 8px #00f5ff33;
+    display:flex; align-items:center; justify-content:flex-end;
+    letter-spacing:4px;
+    position:relative;
+    overflow:hidden;
+  }
+  #answer-display::after {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, #00f5ff44, transparent);
+  }
+  #answer-display .cursor {
+    display:inline-block; width:3px; height:2rem;
+    background:var(--green); margin-left:4px;
+    animation: blink .8s infinite;
+  }
+  @keyframes blink { 0%,50%{opacity:1} 51%,100%{opacity:0} }
+
+  /* Numpad */
+  #numpad {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+    flex:1;
+  }
+  .num-btn {
+    background:#010a14; border:1px solid var(--border);
+    color:var(--cyan); font-family:'Orbitron',sans-serif;
+    font-size:1.4rem; cursor:pointer; border-radius:8px;
+    transition:all .1s; display:flex; align-items:center; justify-content:center;
+    min-height:64px; position:relative; overflow:hidden;
+  }
+  .num-btn::before {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(135deg, #ffffff08, transparent);
+  }
+  .num-btn:hover { border-color:var(--cyan); box-shadow: 0 0 12px #00f5ff33; background:#001525; }
+  .num-btn:active { transform:scale(0.94); background:#002030; }
+  .num-btn.pressed { transform:scale(0.94); background:#002030; border-color:var(--cyan); }
+
+  .num-btn.zero { grid-column: 1 / 2; }
+  .num-btn.clear-btn { 
+    grid-column: 2 / 4;
+    color:var(--red); border-color:#3a1020;
+    font-size:0.9rem; letter-spacing:1px;
+  }
+  .num-btn.clear-btn:hover { border-color:var(--red); box-shadow: 0 0 12px #ff335533; background:#1a0010; }
+
+  /* Enter button */
+  #btn-enter {
+    width:100%; padding:20px;
+    background: linear-gradient(135deg, #006644, #00cc66);
+    border:none; border-radius:10px;
+    color:#000; font-family:'Orbitron',sans-serif;
+    font-size:1.1rem; font-weight:900; letter-spacing:3px;
+    cursor:pointer; transition:all .15s;
+    box-shadow: 0 0 20px #00ff8833;
+    flex-shrink:0;
+  }
+  #btn-enter:hover { box-shadow: var(--glow-green); transform:translateY(-1px); }
+  #btn-enter:active { transform:scale(0.97); }
+
+  /* Panel bottom info */
+  .panel-info {
+    text-align:center; color:#2a4a5a;
+    font-size:0.75rem; letter-spacing:1px;
+    font-family:'Orbitron',sans-serif;
+    flex-shrink:0;
+  }
+
+  /* ===== OVERLAYS ===== */
+  .overlay {
+    position:fixed; inset:0;
+    background:#000000cc;
+    display:none; align-items:center; justify-content:center;
+    z-index:200; flex-direction:column; gap:20px;
+  }
+  .overlay.active { display:flex; }
+  .overlay-card {
+    background: linear-gradient(135deg, #0a1628, #050d1a);
+    border:1px solid var(--border); border-radius:16px;
+    padding:50px 70px; text-align:center;
+    box-shadow: 0 0 60px #00f5ff22;
+    position:relative;
+  }
+  .overlay-title {
+    font-family:'Orbitron',sans-serif; font-size:2.5rem; font-weight:900;
+    margin-bottom:16px;
+  }
+  .overlay-title.win { color:var(--gold); text-shadow: 0 0 20px #ffd70088; }
+  .overlay-title.lose { color:var(--red); text-shadow: 0 0 20px #ff335588; }
+  .overlay-score {
+    font-family:'Orbitron',sans-serif; font-size:1.2rem;
+    color:var(--cyan); margin-bottom:30px;
+  }
+  .btn-replay {
+    padding:14px 40px;
+    background: linear-gradient(135deg, #006644, #00ff88);
+    border:none; border-radius:8px;
+    color:#000; font-family:'Orbitron',sans-serif;
+    font-size:1rem; font-weight:700; letter-spacing:2px;
+    cursor:pointer; transition:all .2s;
+  }
+  .btn-replay:hover { box-shadow: var(--glow-green); }
+
+  /* Feedback flash */
+  #feedback {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-family:'Orbitron',sans-serif; font-size:3rem; font-weight:900;
+    pointer-events:none; z-index:150;
+    opacity:0; transition:opacity .1s;
+  }
+  #feedback.show { opacity:1; animation: feedAnim .7s forwards; }
+  @keyframes feedAnim {
+    0%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    60%{opacity:1;transform:translate(-50%,-70%) scale(1.2)}
+    100%{opacity:0;transform:translate(-50%,-90%) scale(0.8)}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== SETUP SCREEN ===== -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo">⚡ MATH COMMANDER</div>
+    <div class="setup-sub">Jogo Educacional de Matemática</div>
+
+    <div class="form-group">
+      <label class="form-label">Nome do Aluno</label>
+      <input class="form-input" type="text" id="inp-name" placeholder="Digite o nome..." maxlength="20" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Ano Escolar</label>
+      <div class="year-grid" id="year-grid"></div>
+    </div>
+
+    <button class="btn-start" onclick="startGame()">▶ INICIAR MISSÃO</button>
+  </div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="game-screen">
+
+  <div id="game-area">
+    <canvas id="space"></canvas>
+
+    <!-- HUD -->
+    <div class="hud">
+      <span class="hud-player" id="hud-name">ALUNO</span>
+      <span class="hud-sep">|</span>
+      <span class="hud-stat">ANO<span class="hud-val" id="hud-year">1</span>°</span>
+      <span class="hud-sep">|</span>
+      <span class="hud-stat">PONTOS<span class="hud-val score-val" id="hud-score">0</span></span>
+      <span class="hud-sep">|</span>
+      <span class="hud-stat">VIDAS</span>
+      <div class="hud-lives" id="hud-lives"></div>
+      <span class="hud-spacer"></span>
+      <button class="btn-menu" onclick="goSetup()">⬅ MENU</button>
+    </div>
+
+    <!-- Year badge only, small, top center -->
+    <div id="year-badge-bar"></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="panel">
+    <div id="answer-display"><span id="disp-val">0</span><span class="cursor"></span></div>
+    <div id="numpad"></div>
+    <button id="btn-enter" onclick="submitAnswer()">CONFIRMAR</button>
+    <div class="panel-info">Criador Anderson Rodrigo Costa</div>
+  </div>
+</div>
+
+<!-- FEEDBACK -->
+<div id="feedback"></div>
+
+<!-- GAME OVER OVERLAY -->
+<div class="overlay" id="overlay-gameover">
+  <div class="overlay-card">
+    <div class="overlay-title lose">💀 GAME OVER</div>
+    <div class="overlay-score" id="go-score"></div>
+    <button class="btn-replay" onclick="goSetup()">↩ NOVO JOGO</button>
+  </div>
+</div>
+
+<script>
+// ===========================
+// MATH CURRICULUM BY YEAR
+// ===========================
+const curriculum = {
+
+  // ── 1° ANO ── números até 10, apenas adições pequeninhas
+  1: {
+    name:"Adição até 10",
+    gen:()=>{
+      const ops = [
+        ()=>{ let a=rnd(1,5),b=rnd(1,5-a+1); return {q:`${a} + ${b} = ?`,a:a+b}; },
+        ()=>{ let a=rnd(1,4),b=rnd(1,3);     return {q:`${a} + ${b} = ?`,a:a+b}; },
+        ()=>{ let r=rnd(2,8),b=rnd(1,r-1);  return {q:`${r-b} + ${b} = ?`,a:r}; },
+        ()=>{ let a=rnd(1,5);               return {q:`${a} + ${a} = ?`,a:a*2}; }, // dobro
+        ()=>{ let a=rnd(2,9),b=rnd(1,a-1); return {q:`${a} - ${b} = ?`,a:a-b}; }, // subtração simples
+        ()=>{ let a=rnd(1,9);              return {q:`? + 1 = ${a+1}`,a:a}; },      // incógnita fácil
+      ];
+      return ops[rnd(0,ops.length-1)]();
+    }
+  },
+
+  // ── 2° ANO ── adição/subtração até 20, dezenas
+  2: {
+    name:"Até 20 — adição e subtração",
+    gen:()=>{
+      const ops = [
+        ()=>{ let a=rnd(5,15),b=rnd(1,20-a); return {q:`${a} + ${b} = ?`,a:a+b}; },
+        ()=>{ let a=rnd(5,20),b=rnd(1,a);    return {q:`${a} - ${b} = ?`,a:a-b}; },
+        ()=>{ let a=rnd(1,9);                return {q:`${a} + ${a} = ?`,a:a*2}; },       // dobro
+        ()=>{ let a=rnd(2,9);                return {q:`${a*2} - ${a} = ?`,a:a}; },       // metade
+        ()=>{ let r=rnd(10,20),b=rnd(1,r-1);return {q:`${r} - ? = ${r-b}`,a:b}; },       // incógnita
+        ()=>{ let d=rnd(1,2)*10,u=rnd(1,9); return {q:`${d} + ${u} = ?`,a:d+u}; },       // dezena+unidade
+        ()=>{ let a=rnd(10,20),b=rnd(1,10); return {q:`${a} + ${b} = ?`,a:a+b}; },
+        ()=>{ let a=rnd(11,19);             return {q:`${a} - 10 = ?`,a:a-10}; },         // -10
+      ];
+      return ops[rnd(0,ops.length-1)]();
+    }
+  },
+
+  // ── 3° ANO ── tabuada 1-5, adição/subtração até 100
+  3: {
+    name:"Tabuada 1-5 e até 100",
+    gen:()=>{
+      const ops = [
+        ()=>{ let a=rnd(2,5),b=rnd(1,10); return {q:`${a} × ${b} = ?`,a:a*b}; },
+        ()=>{ let a=rnd(2,5),b=rnd(1,10); return {q:`${a*b} ÷ ${a} = ?`,a:b}; },
+        ()=>{ let a=rnd(10,60),b=rnd(1,30); return {q:`${a} + ${b} = ?`,a:a+b}; },
+        ()=>{ let a=rnd(20,90),b=rnd(1,a-10); return {q:`${a} - ${b} = ?`,a:a-b}; },
+        ()=>{ let a=rnd(1,5); return {q:`${a} × 10 = ?`,a:a*10}; },
+        ()=>{ let a=rnd(2,5),b=rnd(1,10); return {q:`${b} × ${a} = ?`,a:a*b}; },       // comutativa
+        ()=>{ let a=rnd(10,50); return {q:`${a} + 10 = ?`,a:a+10}; },
+        ()=>{ let a=rnd(11,50); return {q:`${a} - 10 = ?`,a:a-10}; },
+      ];
+      return ops[rnd(0,ops.length-1)]();
+    }
+  },
+
+  // ── 4° ANO ── tabuada completa, divisão, metade/dobro
+  4: {
+    name:"Tabuada completa e divisão",
+    gen:()=>{
+      const ops = [
+        ()=>{ let a=rnd(2,10),b=rnd(2,10); return {q:`${a} × ${b} = ?`,a:a*b}; },
+        ()=>{ let a=rnd(2,10),b=rnd(2,10); return {q:`${a*b} ÷ ${a} = ?`,a:b}; },
+        ()=>{ let a=rnd(2,10),b=rnd(2,10); return {q:`${a*b} ÷ ${b} = ?`,a:a}; },
+        ()=>{ let a=rnd(10,99),b=rnd(10,99); return {q:`${a} + ${b} = ?`,a:a+b}; },
+        ()=>{ let a=rnd(30,99),b=rnd(10,a-5); return {q:`${a} - ${b} = ?`,a:a-b}; },
+        ()=>{ let a=rnd(1,10); return {q:`Dobro de ${a} = ?`,a:a*2}; },
+        ()=>{ let a=rnd(1,10); return {q:`Metade de ${a*2} = ?`,a:a}; },
+        ()=>{ let a=rnd(2,9); return {q:`${a} × 10 = ?`,a:a*10}; },
+        ()=>{ let a=rnd(2,9); return {q:`${a} × 100 = ?`,a:a*100}; },
+      ];
+      return ops[rnd(0,ops.length-1)]();
+    }
+  },
+
+  // ── 5° ANO ── mult/div maiores, MMC/MDC simples, frações intro
+  5: {
+    name:"Multiplicação, divisão e frações",
+    gen:()=>{
+      const ops = [
+        ()=>{ let a=rnd(5,15),b=rnd(5,15); return {q:`${a} × ${b} = ?`,a:a*b}; },
+        ()=>{ let a=rnd(3,12),b=rnd(3,12); return {q:`${a*b} ÷ ${a} = ?`,a:b}; },
+        ()=>{ let a=rnd(100,500),b=rnd(10,99); return {q:`${a} + ${b} = ?`,a:a+b}; },
+        ()=>{ let a=rnd(100,500),b=rnd(10,a-10); return {q:`${a} - ${b} = ?`,a:a-b}; },
+        ()=>{ let d=rnd(2,8),n1=rnd(1,d-1),n2=rnd(1,d-n1); return {q:`${n1}/${d} + ${n2}/${d} = ?/${d}`,a:n1+n2}; },
+        ()=>{ let d=rnd(2,9),n=rnd(2,d); return {q:`${n}/${d} - ${n-1}/${d} = ?/${d}`,a:1}; },
+        ()=>{ let a=rnd(2,9); return {q:`${a}² = ?`,a:a*a}; },
+        ()=>{ let a=rnd(1,9); return {q:`${a*10} ÷ ${a} = ?`,a:10}; },
+        ()=>{ let a=rnd(2,6),b=rnd(2,6); return {q:`${a} × ${b} × 2 = ?`,a:a*b*2}; },
+      ];
+      return ops[rnd(0,ops.length-1)]();
+    }
+  },
+
+  // ── 6° ANO ── potência, raiz, frações, números negativos, %
+  6: {
+    name:"Potência, raiz e porcentagem",
+    gen:()=>{
+      const ops = [
+        ()=>{ let b=rnd(2,9); return {q:`${b}² = ?`,a:b*b}; },
+        ()=>{ let b=rnd(2,9); return {q:`√${b*b} = ?`,a:b}; },
+        ()=>{ let b=rnd(2,5); return {q:`${b}³ = ?`,a:b*b*b}; },
+        ()=>{ let v=rnd(10,200),p=pick([10,20,25,50]); return {q:`${p}% de ${v} = ?`,a:v*p/100}; },
+        ()=>{ let d=rnd(2,8),n1=rnd(1,d-1),n2=rnd(1,d-1); let s=n1+n2; if(s>=d){n2=d-n1-1||1;s=n1+n2;} return {q:`${n1}/${d} + ${n2}/${d} = ?/${d}`,a:s}; },
+        ()=>{ let a=rnd(-10,-1),b=rnd(1,15); return {q:`${a} + ${b} = ?`,a:a+b}; },    // negativo
+        ()=>{ let a=rnd(1,10),b=rnd(1,a);    return {q:`${b} - ${a} = ?`,a:b-a}; },   // resultado neg
+        ()=>{ let a=rnd(2,12),b=rnd(2,12);  return {q:`${a} × ${b} = ?`,a:a*b}; },
+        ()=>{ let a=rnd(2,9); return {q:`2³ = ?`,a:8}; },
+        ()=>{ let v=rnd(50,200); return {q:`10% de ${v} = ?`,a:v/10}; },
+      ];
+      return ops[rnd(0,ops.length-1)]();
+    }
+  },
+
+  // ── 7° ANO ── frações (×÷), %, razão/proporção, equações 1°grau
+  7: {
+    name:"Frações, % e equações",
+    gen:()=>{
+      const ops = [
+        ()=>{ let a=rnd(1,8),b=rnd(2,9),c=rnd(1,8),d=rnd(2,9); let n=a*d+c*b,den=b*d; let g=mdc(Math.abs(n),den); return {q:`${a}/${b} + ${c}/${d} = ?`,a:Math.round(n/g*10)/10}; },
+        ()=>{ let a=rnd(2,6),b=rnd(2,6); return {q:`${a}/3 × ${b}/4 = ?`,a:Math.round(a*b/12*100)/100}; },
+        ()=>{ let v=rnd(10,200),p=pick([10,20,25,50,75]); return {q:`${p}% de ${v} = ?`,a:v*p/100}; },
+        ()=>{ let a=rnd(1,10),c=rnd(2,30); return {q:`x + ${a} = ${c+a}`,a:c}; },    // equação +
+        ()=>{ let a=rnd(1,10),c=rnd(1,30); return {q:`x - ${a} = ${c}`,a:c+a}; },   // equação -
+        ()=>{ let a=rnd(2,9),c=rnd(1,10); return {q:`${a}x = ${a*c}`,a:c}; },        // equação ×
+        ()=>{ let a=rnd(2,8); return {q:`${a}² = ?`,a:a*a}; },
+        ()=>{ let a=rnd(2,8); return {q:`√${a*a} = ?`,a:a}; },
+        ()=>{ let a=rnd(10,100),p=pick([10,25,50]); return {q:`${a} + ${p}% de ${a} = ?`,a:a+a*p/100}; },
+      ];
+      return ops[rnd(0,ops.length-1)]();
+    }
+  },
+
+  // ── 8° ANO ── equações 1°grau, sistemas simples, potência, Pitágoras
+  8: {
+    name:"Equações, sistemas e potência",
+    gen:()=>{
+      const ops = [
+        ()=>{ let a=rnd(2,8),b=rnd(-15,15),x=rnd(-10,10); return {q:`${a}x + ${b} = ${a*x+b}`,a:x}; },
+        ()=>{ let a=rnd(2,9),c=rnd(1,15); return {q:`${a}x - ${c} = ${a*c-c}`,a:c}; },
+        ()=>{ let a=rnd(1,9),b=rnd(1,9); return {q:`${a}x + ${b}x = ${(a+b)*3}`,a:3}; },  // coleta
+        ()=>{ let x=rnd(2,12); return {q:`x² = ${x*x}`,a:x}; },
+        ()=>{ let a=rnd(2,5); return {q:`${a}³ = ?`,a:a*a*a}; },
+        ()=>{ let a=rnd(3,9),b=rnd(3,a-1)||1; let c2=a*a-b*b; if(c2>0&&Number.isInteger(Math.sqrt(c2))){return {q:`a²=${a*a}, b²=${b*b}, c=?`,a:Math.sqrt(a*a-b*b)};} let t=[3,4,5]; return {q:`Pitágoras: 3²+4²=?`,a:25}; },
+        ()=>{ let v=rnd(50,500),p=pick([10,15,20,25,30]); return {q:`${p}% de ${v} = ?`,a:v*p/100}; },
+        ()=>{ let a=rnd(2,12),b=rnd(2,12); return {q:`${a} × ${b} + ${a} = ?`,a:a*(b+1)}; },
+        ()=>{ let a=rnd(2,6); return {q:`2^${a} = ?`,a:Math.pow(2,a)}; },
+      ];
+      return ops[rnd(0,ops.length-1)]();
+    }
+  },
+
+  // ── 9° ANO ── equações 2°grau (simples), progressões, função afim
+  9: {
+    name:"Álgebra avançada e funções",
+    gen:()=>{
+      const ops = [
+        ()=>{ let x=rnd(1,8); return {q:`x² - ${x*x} = 0  →  x=?`,a:x}; },           // 2°grau simples
+        ()=>{ let x=rnd(-6,6); return {q:`x² = ${x*x}  →  |x|=?`,a:Math.abs(x)}; },
+        ()=>{ let a=rnd(2,6),b=rnd(-10,10),x=rnd(-5,5); return {q:`${a}x + ${b} = ${a*x+b}`,a:x}; },
+        ()=>{ let a=rnd(1,5),r=rnd(2,4); return {q:`PA: ${a}, ${a+r}, ${a+2*r}, ? `,a:a+3*r}; },  // PA
+        ()=>{ let a=rnd(1,4),r=rnd(2,3); return {q:`PG: ${a}, ${a*r}, ${a*r*r}, ?`,a:a*r*r*r}; }, // PG
+        ()=>{ let m=rnd(1,5),b2=rnd(-10,10),x=rnd(-4,4); return {q:`f(x)=${m}x+${b2}, f(${x})=?`,a:m*x+b2}; }, // função afim
+        ()=>{ let x=rnd(2,8); return {q:`${x}² + ${x} = ?`,a:x*x+x}; },
+        ()=>{ let a=rnd(2,5); return {q:`${a}³ = ?`,a:a*a*a}; },
+        ()=>{ let a=rnd(2,4),b=rnd(2,4); return {q:`(${a}+${b})² = ?`,a:(a+b)*(a+b)}; },  // quadrado da soma
+        ()=>{ let a=rnd(2,8),b=rnd(2,8); return {q:`${a}² + ${b}² = ?`,a:a*a+b*b}; },
+      ];
+      return ops[rnd(0,ops.length-1)]();
+    }
+  }
+};
+
+// helpers
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function mdc(a,b){ while(b){let t=b;b=a%b;a=t;} return a||1; }
+
+function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+// ===========================
+// GAME STATE
+// ===========================
+let state = {
+  playerName:'', year:1, score:0, lives:3,
+  question:null, answer:0, input:'',
+  running:false, alienY:0, alienX:0,
+  phase:'idle', // idle, descending, shooting, exploding
+  laserProgress:0, explosionFrames:0,
+  alienHP:1, wrongCount:0
+};
+
+let stars = [];
+let canvas, ctx;
+
+// ===========================
+// SETUP
+// ===========================
+function buildYearGrid(){
+  const grid = document.getElementById('year-grid');
+  const labels = ['','Contagem','Até 20','Tabuada 1-5','Tabuada','Mult/Div','Potência','Frações','Equações','Álgebra'];
+  for(let y=1;y<=9;y++){
+    const btn = document.createElement('button');
+    btn.className='year-btn';
+    btn.dataset.year = y;
+    btn.innerHTML = `${y}°<span class="year-label">${labels[y]}</span>`;
+    btn.onclick = () => selectYear(y);
+    grid.appendChild(btn);
+  }
+  selectYear(1);
+}
+
+function selectYear(y){
+  document.querySelectorAll('.year-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.year-btn[data-year="${y}"]`).classList.add('active');
+  state.year = y;
+}
+
+function buildNumpad(){
+  const pad = document.getElementById('numpad');
+  pad.innerHTML = '';
+  for(let i=1;i<=9;i++){
+    const b = document.createElement('button');
+    b.className='num-btn'; b.textContent=i;
+    b.onclick = () => numPress(String(i), b);
+    pad.appendChild(b);
+  }
+
+  if(state.year >= 7){
+    // Row: 0, ., -
+    const z = document.createElement('button');
+    z.className='num-btn'; z.textContent='0';
+    z.onclick = () => numPress('0', z);
+    pad.appendChild(z);
+
+    const dot = document.createElement('button');
+    dot.className='num-btn'; dot.textContent=',';
+    dot.onclick = () => { if(!state.input.includes('.')){ numPress('.', dot); } };
+    pad.appendChild(dot);
+
+    const neg = document.createElement('button');
+    neg.className='num-btn'; neg.textContent='+/-'; neg.style.fontSize='0.8rem';
+    neg.onclick = () => { 
+      if(state.input.startsWith('-')) state.input=state.input.slice(1);
+      else state.input='-'+(state.input||'');
+      updateDisplay();
+    };
+    pad.appendChild(neg);
+  } else {
+    const z = document.createElement('button');
+    z.className='num-btn zero'; z.textContent='0';
+    z.onclick = () => numPress('0', z);
+    pad.appendChild(z);
+
+    const cl = document.createElement('button');
+    cl.className='num-btn clear-btn'; cl.textContent='⌫ APAGAR';
+    cl.onclick = () => { state.input = state.input.slice(0,-1); updateDisplay(); };
+    pad.appendChild(cl);
+  }
+
+  // Apagar sempre no final
+  if(state.year >= 7){
+    const cl = document.createElement('button');
+    cl.className='num-btn clear-btn'; cl.textContent='⌫ APAGAR';
+    cl.style.gridColumn='1/4';
+    cl.onclick = () => { state.input = state.input.slice(0,-1); updateDisplay(); };
+    pad.appendChild(cl);
+  }
+}
+
+function numPress(n, btn){
+  if(!state.running || state.phase!=='descending') return;
+  if(state.input.length >= 5) return;
+  state.input += n;
+  updateDisplay();
+  // Visual feedback
+  btn.classList.add('pressed');
+  setTimeout(()=>btn.classList.remove('pressed'),120);
+}
+
+function updateDisplay(){
+  document.getElementById('disp-val').textContent = state.input || '0';
+}
+
+// ===========================
+// START GAME
+// ===========================
+function startGame(){
+  const name = document.getElementById('inp-name').value.trim() || 'Aluno';
+  state.playerName = name;
+  state.score = 0;
+  state.lives = 3;
+  state.input = '';
+  state.running = true;
+
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('game-screen').classList.add('active');
+  
+  document.getElementById('hud-name').textContent = name.toUpperCase();
+  document.getElementById('hud-year').textContent = state.year;
+
+  buildNumpad();
+  initCanvas();
+  spawnAlien();
+  updateHUD();
+  loop();
+}
+
+function goSetup(){
+  state.running = false;
+  state.phase = 'idle';
+  document.getElementById('overlay-gameover').classList.remove('active');
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('setup-screen').style.display='flex';
+  // Pre-fill the name
+  if(state.playerName) document.getElementById('inp-name').value = state.playerName;
+}
+
+// ===========================
+// CANVAS / STARS
+// ===========================
+function initCanvas(){
+  canvas = document.getElementById('space');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  stars = [];
+  for(let i=0;i<150;i++){
+    stars.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height,
+      r:Math.random()*1.5+0.3,
+      s:Math.random()*0.4+0.1,
+      b:Math.random()
+    });
+  }
+}
+
+function resizeCanvas(){
+  const area = document.getElementById('game-area');
+  canvas.width = area.clientWidth;
+  canvas.height = area.clientHeight;
+}
+
+// ===========================
+// SPAWN & QUESTIONS
+// ===========================
+function spawnAlien(){
+  const cur = curriculum[state.year];
+  const q = cur.gen();
+  state.question = q.q;
+  state.answer = q.a;
+  state.input = '';
+  state.alienX = rnd(80, canvas.width-80);
+  state.alienY = -60;
+  state.phase = 'descending';
+  state.laserProgress = 0;
+  state.explosionFrames = 0;
+  updateDisplay();
+  updateQuestion();
+}
+
+function updateQuestion(){
+  const cur = curriculum[state.year];
+  const el = document.getElementById('year-badge-bar');
+  if(el) el.textContent = `ANO ${state.year}° — ${cur.name.toUpperCase()}`;
+}
+
+// ===========================
+// SUBMIT
+// ===========================
+function submitAnswer(){
+  if(!state.running || state.phase!=='descending') return;
+  const raw = state.input;
+  if(!raw || raw==='-') return;
+  const val = parseFloat(raw);
+  if(isNaN(val)) return;
+
+  // Compare with tolerance for floating point (e.g. fractions)
+  const correct = Math.abs(val - state.answer) < 0.1;
+
+  if(correct){
+    state.score += 10 * state.year;
+    updateHUD();
+    showFeedback('✓ ACERTOU!', '#00ff88');
+    state.phase = 'shooting';
+    state.laserProgress = 0;
+  } else {
+    state.lives--;
+    updateHUD();
+    showFeedback('✗ ERROU!', '#ff3355');
+    state.input = '';
+    updateDisplay();
+    if(state.lives <= 0) gameOver();
+  }
+}
+
+// ===========================
+// HUD
+// ===========================
+function updateHUD(){
+  document.getElementById('hud-score').textContent = state.score;
+  const livesDiv = document.getElementById('hud-lives');
+  livesDiv.innerHTML = '';
+  for(let i=0;i<3;i++){
+    const h = document.createElement('span');
+    h.className = 'hud-heart' + (i < state.lives ? '' : ' empty');
+    h.textContent = '❤';
+    livesDiv.appendChild(h);
+  }
+}
+
+// ===========================
+// FEEDBACK
+// ===========================
+function showFeedback(msg, color){
+  const el = document.getElementById('feedback');
+  el.textContent = msg;
+  el.style.color = color;
+  el.style.textShadow = `0 0 20px ${color}`;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+
+// ===========================
+// GAME OVER
+// ===========================
+function gameOver(){
+  state.running = false;
+  state.phase = 'idle';
+  document.getElementById('go-score').textContent = `${state.playerName} — ${state.score} pontos`;
+  document.getElementById('overlay-gameover').classList.add('active');
+}
+
+// ===========================
+// MAIN LOOP
+// ===========================
+let lastTime = 0;
+function loop(ts=0){
+  if(!state.running) return;
+  const dt = Math.min(ts - lastTime, 50);
+  lastTime = ts;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+const ALIEN_SPEED = 40; // px/sec
+const SHIP_Y_OFFSET = 80;
+
+function update(dt){
+  const sec = dt/1000;
+
+  // Move stars
+  stars.forEach(s=>{ s.y += s.s; if(s.y>canvas.height) s.y=0; });
+
+  if(state.phase==='descending'){
+    state.alienY += ALIEN_SPEED * sec;
+    // Alien reached bottom
+    if(state.alienY > canvas.height - SHIP_Y_OFFSET - 40){
+      state.lives--;
+      updateHUD();
+      showFeedback('👾 INVASÃO!','#ff6600');
+      if(state.lives<=0){ gameOver(); return; }
+      spawnAlien();
+    }
+  }
+
+  if(state.phase==='shooting'){
+    state.laserProgress += 4 * sec; // 0 -> 1 over 250ms
+    if(state.laserProgress >= 1){
+      state.laserProgress = 1;
+      state.phase = 'exploding';
+      state.explosionFrames = 0;
+    }
+  }
+
+  if(state.phase==='exploding'){
+    state.explosionFrames += dt;
+    if(state.explosionFrames > 600){
+      spawnAlien();
+    }
+  }
+}
+
+// ===========================
+// RENDER
+// ===========================
+function render(){
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // BG gradient
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#010818');
+  bg.addColorStop(0.5,'#020d20');
+  bg.addColorStop(1,'#000');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  // Nebula
+  const neb = ctx.createRadialGradient(W*0.5,H*0.3,0,W*0.5,H*0.3,W*0.6);
+  neb.addColorStop(0,'#1a005522');
+  neb.addColorStop(0.4,'#00004422');
+  neb.addColorStop(1,'transparent');
+  ctx.fillStyle=neb;
+  ctx.fillRect(0,0,W,H);
+
+  // Stars
+  stars.forEach(s=>{
+    const alpha = 0.4 + 0.6*Math.abs(Math.sin(Date.now()*0.001 + s.b*10));
+    ctx.fillStyle=`rgba(255,255,255,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  const shipX = W/2;
+  const shipY = H - SHIP_Y_OFFSET;
+
+  // ---- LASER ----
+  if(state.phase==='shooting' || state.phase==='exploding'){
+    const progress = state.laserProgress;
+    const ex = state.alienX;
+    const ey = state.alienY;
+
+    // Beam
+    const laserEndX = shipX + (ex-shipX)*progress;
+    const laserEndY = shipY + (ey-shipY)*progress;
+
+    ctx.save();
+    ctx.shadowBlur=20; ctx.shadowColor='#ff6600';
+    ctx.strokeStyle='#ff4400';
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(shipX, shipY-20);
+    ctx.lineTo(laserEndX, laserEndY);
+    ctx.stroke();
+
+    ctx.strokeStyle='#ffaa00';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(shipX, shipY-20);
+    ctx.lineTo(laserEndX, laserEndY);
+    ctx.stroke();
+
+    ctx.strokeStyle='#fff';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(shipX, shipY-20);
+    ctx.lineTo(laserEndX, laserEndY);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ---- ALIEN ----
+  if(state.phase==='descending' || state.phase==='shooting'){
+    drawAlien(state.alienX, state.alienY);
+
+    // Question label near alien — bigger and prominent
+    const q = state.question;
+    ctx.save();
+    ctx.font = 'bold 22px Orbitron, monospace';
+    ctx.textAlign='center';
+    const tw = ctx.measureText(q).width;
+    // Background pill
+    ctx.fillStyle='#000000cc';
+    const rx = state.alienX - tw/2 - 18, ry = state.alienY + 38, rw = tw+36, rh = 36;
+    ctx.beginPath();
+    ctx.roundRect(rx, ry, rw, rh, 8);
+    ctx.fill();
+    // Cyan border
+    ctx.strokeStyle='#00f5ff'; ctx.lineWidth=1.5;
+    ctx.stroke();
+    // Text
+    ctx.fillStyle='#ffffff';
+    ctx.shadowBlur=10; ctx.shadowColor='#00f5ff';
+    ctx.fillText(q, state.alienX, state.alienY + 62);
+    ctx.restore();
+  }
+
+  // ---- EXPLOSION ----
+  if(state.phase==='exploding'){
+    drawExplosion(state.alienX, state.alienY, state.explosionFrames);
+  }
+
+  // ---- SHIP ----
+  drawShip(shipX, shipY);
+
+  // Engine glow on canvas bottom
+  const engGlow = ctx.createRadialGradient(shipX,H,0,shipX,H,80);
+  engGlow.addColorStop(0,'#00f5ff44');
+  engGlow.addColorStop(1,'transparent');
+  ctx.fillStyle=engGlow;
+  ctx.fillRect(0,H-80,W,80);
+}
+
+function drawAlien(x,y){
+  ctx.save();
+  // Glow
+  ctx.shadowBlur=30; ctx.shadowColor='#aa00ff';
+  
+  // Body (purple circle)
+  ctx.fillStyle='#6600cc';
+  ctx.beginPath();
+  ctx.arc(x,y,30,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle='#8800ff';
+  ctx.beginPath();
+  ctx.arc(x,y,26,0,Math.PI*2);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle='#ffcc00';
+  ctx.shadowColor='#ffcc00';
+  ctx.beginPath(); ctx.arc(x-10,y-4,6,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+10,y-4,6,0,Math.PI*2); ctx.fill();
+  
+  ctx.fillStyle='#000';
+  ctx.shadowBlur=0;
+  ctx.beginPath(); ctx.arc(x-10,y-4,3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+10,y-4,3,0,Math.PI*2); ctx.fill();
+
+  // Antennae
+  ctx.strokeStyle='#aa00ff'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(x-15,y-26); ctx.lineTo(x-20,y-40); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+15,y-26); ctx.lineTo(x+20,y-40); ctx.stroke();
+  ctx.fillStyle='#ff00ff';
+  ctx.beginPath(); ctx.arc(x-20,y-40,4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+20,y-40,4,0,Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawExplosion(x,y,frames){
+  const t = frames/600;
+  const r1 = 30 + t*80;
+  const r2 = r1*0.7;
+  ctx.save();
+  ctx.globalAlpha = 1-t;
+
+  const g1 = ctx.createRadialGradient(x,y,0,x,y,r1);
+  g1.addColorStop(0,'#ffffff');
+  g1.addColorStop(0.2,'#ffaa00');
+  g1.addColorStop(0.6,'#ff4400');
+  g1.addColorStop(1,'transparent');
+  ctx.fillStyle=g1;
+  ctx.beginPath(); ctx.arc(x,y,r1,0,Math.PI*2); ctx.fill();
+
+  const g2 = ctx.createRadialGradient(x,y,0,x,y,r2);
+  g2.addColorStop(0,'#ffffff');
+  g2.addColorStop(0.5,'#ffff00');
+  g2.addColorStop(1,'transparent');
+  ctx.fillStyle=g2;
+  ctx.beginPath(); ctx.arc(x,y,r2,0,Math.PI*2); ctx.fill();
+
+  // Sparks
+  for(let i=0;i<8;i++){
+    const angle = (i/8)*Math.PI*2;
+    const sx = x + Math.cos(angle)*r1*0.9;
+    const sy = y + Math.sin(angle)*r1*0.9;
+    ctx.fillStyle='#ffcc00';
+    ctx.beginPath(); ctx.arc(sx,sy,4*(1-t),0,Math.PI*2); ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawShip(x,y){
+  ctx.save();
+  ctx.shadowBlur=20; ctx.shadowColor='#00f5ff';
+
+  // Engine flame
+  const flame = ctx.createLinearGradient(x,y,x,y+40);
+  flame.addColorStop(0,'#00f5ff');
+  flame.addColorStop(0.4,'#0088ff');
+  flame.addColorStop(1,'transparent');
+  ctx.fillStyle=flame;
+  ctx.beginPath();
+  ctx.ellipse(x,y+20,8,20+Math.random()*8,0,0,Math.PI*2);
+  ctx.fill();
+
+  // Main body
+  ctx.fillStyle='#1a3a5c';
+  ctx.beginPath();
+  ctx.moveTo(x,y-40);
+  ctx.lineTo(x+22,y+10);
+  ctx.lineTo(x+14,y+16);
+  ctx.lineTo(x-14,y+16);
+  ctx.lineTo(x-22,y+10);
+  ctx.closePath();
+  ctx.fill();
+
+  // Cockpit
+  const cockpit = ctx.createRadialGradient(x,y-18,0,x,y-18,12);
+  cockpit.addColorStop(0,'#44eeee');
+  cockpit.addColorStop(1,'#006688');
+  ctx.fillStyle=cockpit;
+  ctx.beginPath();
+  ctx.ellipse(x,y-18,10,12,0,0,Math.PI*2);
+  ctx.fill();
+
+  // Wings
+  ctx.fillStyle='#0a2a44';
+  ctx.beginPath(); ctx.moveTo(x+14,y); ctx.lineTo(x+38,y+16); ctx.lineTo(x+18,y+14); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x-14,y); ctx.lineTo(x-38,y+16); ctx.lineTo(x-18,y+14); ctx.closePath(); ctx.fill();
+
+  // Wing accents
+  ctx.strokeStyle='#00f5ff'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(x+16,y+2); ctx.lineTo(x+34,y+14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x-16,y+2); ctx.lineTo(x-34,y+14); ctx.stroke();
+
+  // Cannon
+  ctx.fillStyle='#00ccee';
+  ctx.fillRect(x-3, y-40, 6, 14);
+  ctx.fillStyle='#00f5ff';
+  ctx.fillRect(x-2, y-46, 4, 8);
+
+  // Green lights
+  ctx.fillStyle='#00ff44'; ctx.shadowColor='#00ff44';
+  ctx.beginPath(); ctx.arc(x-8,y+10,3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+8,y+10,3,0,Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+// ===========================
+// KEYBOARD
+// ===========================
+document.addEventListener('keydown',e=>{
+  if(e.key>='0' && e.key<='9'){
+    const btns = document.querySelectorAll('.num-btn');
+    btns.forEach(b=>{ if(b.textContent===e.key){ numPress(e.key,b); } });
+  }
+  if(e.key==='Enter') submitAnswer();
+  if(e.key==='Backspace'){ state.input=state.input.slice(0,-1); updateDisplay(); }
+  if(e.key==='-' && state.year>=8){
+    if(state.input.startsWith('-')) state.input=state.input.slice(1);
+    else if(state.input) state.input='-'+state.input;
+    updateDisplay();
+  }
+});
+
+// ===========================
+// INIT
+// ===========================
+buildYearGrid();
+
+// Enter key on name input
+document.getElementById('inp-name').addEventListener('keydown',e=>{
+  if(e.key==='Enter') startGame();
+});
+
+window.addEventListener('resize',()=>{
+  if(state.running) resizeCanvas();
+});
+</script>
+</body>
+</html>
