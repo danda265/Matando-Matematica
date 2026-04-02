@@ -682,7 +682,7 @@ function updateDisplay(){
 function startGame(){
   const name = document.getElementById('inp-name').value.trim() || 'Aluno';
 
-  // Mata qualquer loop anterior
+  // Para qualquer loop anterior
   loopSession++;
   const mySession = loopSession;
 
@@ -699,20 +699,26 @@ function startGame(){
   state.explosionFrames = 0;
 
   document.getElementById('overlay-gameover').classList.remove('active');
-  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('game-screen').classList.add('active');
 
   document.getElementById('hud-name').textContent = name.toUpperCase();
   document.getElementById('hud-year').textContent = state.year;
 
   buildNumpad();
-  initCanvas();
   updateHUD();
   updateDisplay();
-  spawnAlien();
 
-  lastTime = 0;
-  loop(0, mySession);
+  // Aguarda o browser renderizar a tela (canvas precisa ter tamanho real)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if(mySession !== loopSession) return; // usuário voltou ao menu antes
+      initCanvas();
+      spawnAlien();
+      lastTime = 0;
+      loop(0, mySession);
+    });
+  });
 }
 
 function goSetup(){
