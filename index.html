@@ -585,6 +585,7 @@ let state = {
 
 let stars = [];
 let canvas, ctx;
+let loopSession = 0; // incrementa a cada novo jogo, mata loops antigos
 
 // ===========================
 // SETUP
@@ -680,23 +681,38 @@ function updateDisplay(){
 // ===========================
 function startGame(){
   const name = document.getElementById('inp-name').value.trim() || 'Aluno';
+
+  // Mata qualquer loop anterior
+  loopSession++;
+  const mySession = loopSession;
+
+  // Reset completo do estado
   state.playerName = name;
   state.score = 0;
   state.lives = 3;
   state.input = '';
   state.running = true;
+  state.phase = 'idle';
+  state.alienY = 0;
+  state.alienX = 0;
+  state.laserProgress = 0;
+  state.explosionFrames = 0;
 
+  document.getElementById('overlay-gameover').classList.remove('active');
   document.getElementById('setup-screen').style.display='none';
   document.getElementById('game-screen').classList.add('active');
-  
+
   document.getElementById('hud-name').textContent = name.toUpperCase();
   document.getElementById('hud-year').textContent = state.year;
 
   buildNumpad();
   initCanvas();
-  spawnAlien();
   updateHUD();
-  loop();
+  updateDisplay();
+  spawnAlien();
+
+  lastTime = 0;
+  loop(0, mySession);
 }
 
 function goSetup(){
@@ -829,13 +845,14 @@ function gameOver(){
 // MAIN LOOP
 // ===========================
 let lastTime = 0;
-function loop(ts=0){
-  if(!state.running) return;
+function loop(ts=0, session=loopSession){
+  // Se a sessão mudou ou o jogo parou, encerra este loop
+  if(session !== loopSession || !state.running) return;
   const dt = Math.min(ts - lastTime, 50);
   lastTime = ts;
   update(dt);
   render();
-  requestAnimationFrame(loop);
+  requestAnimationFrame(t => loop(t, session));
 }
 
 const ALIEN_SPEED = 40; // px/sec
