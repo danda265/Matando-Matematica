@@ -711,12 +711,12 @@ function startGame(){
 
   // Aguarda o browser renderizar a tela (canvas precisa ter tamanho real)
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if(mySession !== loopSession) return; // usuário voltou ao menu antes
+    requestAnimationFrame((ts) => {
+      if(mySession !== loopSession) return;
       initCanvas();
       spawnAlien();
-      lastTime = 0;
-      loop(0, mySession);
+      lastTime = ts; // timestamp real evita spike de dt no 1° frame
+      loop(ts, mySession);
     });
   });
 }
@@ -765,8 +765,9 @@ function spawnAlien(){
   state.question = q.q;
   state.answer = q.a;
   state.input = '';
-  state.alienX = rnd(80, canvas.width-80);
-  state.alienY = -60;
+  // Começa já visível no topo da tela, não abaixo dela
+  state.alienX = rnd(100, canvas.width - 100);
+  state.alienY = 50;
   state.phase = 'descending';
   state.laserProgress = 0;
   state.explosionFrames = 0;
@@ -861,7 +862,7 @@ function loop(ts=0, session=loopSession){
   requestAnimationFrame(t => loop(t, session));
 }
 
-const ALIEN_SPEED = 40; // px/sec
+const ALIEN_SPEED = 70; // px/sec — mais rápido e dinâmico
 const SHIP_Y_OFFSET = 80;
 
 function update(dt){
