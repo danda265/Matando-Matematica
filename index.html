@@ -321,6 +321,17 @@
     60%{opacity:1;transform:translate(-50%,-70%) scale(1.2)}
     100%{opacity:0;transform:translate(-50%,-90%) scale(0.8)}
   }
+  /* telas baixas (notebook de escola): a tela inicial rola em vez de cortar o titulo ou o botao */
+  #setup-screen { overflow-y:auto; justify-content:flex-start; }
+  #setup-screen .setup-card { margin:auto; }
+  .eja-linha { text-align:center; margin-top:18px; }
+  .eja-site {
+    display:inline-flex; align-items:center; gap:8px; min-height:38px; padding:8px 16px; border-radius:999px;
+    border:1px solid var(--cyan-dim); background:var(--panel2); color:var(--cyan);
+    font-family:'Orbitron',sans-serif; font-size:.7rem; letter-spacing:1.5px; text-decoration:none;
+  }
+  .eja-site:hover { box-shadow: var(--glow-cyan); }
+  .eja-site:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
 </style>
 </head>
 <body>
@@ -342,6 +353,7 @@
     </div>
 
     <button class="btn-start" onclick="startGame()">▶ INICIAR MISSÃO</button>
+    <div class="eja-linha"><a class="eja-site" href="https://educajogo.com.br/" aria-label="Voltar ao site EducaJogo" title="Voltar ao site">🏠 Voltar ao site EducaJogo</a></div>
   </div>
 </div>
 
