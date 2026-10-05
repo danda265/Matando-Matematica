@@ -54,9 +54,18 @@ Desenvolvido para ser usado em sala de aula como ferramenta lúdica de fixação
 
 O jogo roda diretamente no navegador, sem instalação:
 
-**👉 [math-commander.github.io](https://seu-usuario.github.io/math-commander)**
+**👉 [matematica.educajogo.com.br](https://matematica.educajogo.com.br/)**
 
 Compatível com computadores, tablets e celulares.
+
+### Demonstração e jogo completo
+
+O mesmo endereço abre duas versões:
+
+- **Demonstração**, para quem não tem código de turma: 1° e 2° ano livres; do 3° ao 9° aparecem com cadeado e uma tela de venda.
+- **Jogo completo**, para quem entrou com o código da turma (serviço `educajogo-acesso`): os 9 anos.
+
+O que é do jogo completo fica no `index.html` entre `/*COMPLETO*/` e `/*/COMPLETO*/` (os anos 3 a 9 do `curriculum`). Quem monta o site (`publicar_jogo.py`, na pasta Projetos, fora deste repositório) tira esses trechos da demonstração, coloca a tela de venda, gera o completo em `_full/` e confere que nada do que é pago ficou na demonstração. Abrindo o `index.html` direto no navegador você joga o completo, porque a tela de venda só entra na montagem do site.
 
 ---
 

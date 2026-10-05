@@ -330,6 +330,11 @@
     border:1px solid var(--cyan-dim); background:var(--panel2); color:var(--cyan);
     font-family:'Orbitron',sans-serif; font-size:.7rem; letter-spacing:1.5px; text-decoration:none;
   }
+  /* demonstracao: os anos do jogo completo ficam com cadeado */
+  .year-btn.locked { opacity:.55; border-style:dashed; }
+  .year-btn .cadeado { position:absolute; top:4px; right:6px; font-size:.7rem; }
+  .eja-previa-aviso { text-align:center; margin-top:12px; color:var(--cyan-dim); font-size:.9rem; letter-spacing:1px; }
+  .btn-venda { display:block; margin:14px auto 0; background:transparent; border:1px solid var(--gold); color:var(--gold); }
   .eja-site:hover { box-shadow: var(--glow-cyan); }
   .eja-site:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
 </style>
@@ -442,6 +447,7 @@ const curriculum = {
     }
   },
 
+/*COMPLETO*/
   // ── 3° ANO ── tabuada 1-5, adição/subtração até 100
   3: {
     name:"Tabuada 1-5 e até 100",
@@ -575,6 +581,7 @@ const curriculum = {
       return ops[rnd(0,ops.length-1)]();
     }
   }
+/*/COMPLETO*/
 };
 
 // helpers
@@ -599,6 +606,12 @@ let stars = [];
 let canvas, ctx;
 let loopSession = 0; // incrementa a cada novo jogo, mata loops antigos
 
+// versao de demonstracao: o venda.js so existe nela (o build poe antes deste script) e o curriculum so tem os anos livres,
+// porque os outros anos ficam entre as marcas COMPLETO e nao vao para a previa
+const PREVIA = typeof EJAVenda !== 'undefined';
+const livre = y => !!curriculum[y];
+let vendaVista = false;
+
 // ===========================
 // SETUP
 // ===========================
@@ -610,13 +623,25 @@ function buildYearGrid(){
     btn.className='year-btn';
     btn.dataset.year = y;
     btn.innerHTML = `${y}°<span class="year-label">${labels[y]}</span>`;
+    if(!livre(y)){
+      btn.classList.add('locked');
+      btn.setAttribute('aria-label', `${y}º ano: só no jogo completo`);
+      btn.insertAdjacentHTML('beforeend', '<span class="cadeado" aria-hidden="true">🔒</span>');
+    }
     btn.onclick = () => selectYear(y);
     grid.appendChild(btn);
+  }
+  if(PREVIA){
+    const aviso = document.createElement('div');
+    aviso.className = 'eja-previa-aviso';
+    aviso.textContent = `Demonstração: ${Object.keys(curriculum).map(y=>y+'º').join(' e ')} ano. 🔒 = só no jogo completo.`;
+    grid.after(aviso);
   }
   selectYear(1);
 }
 
 function selectYear(y){
+  if(!livre(y)){ EJAVenda.mostrar('parte'); return; }
   document.querySelectorAll('.year-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector(`.year-btn[data-year="${y}"]`).classList.add('active');
   state.year = y;
@@ -692,6 +717,7 @@ function updateDisplay(){
 // START GAME
 // ===========================
 function startGame(){
+  if(!livre(state.year)) return;
   const name = document.getElementById('inp-name').value.trim() || 'Aluno';
 
   // Para qualquer loop anterior
@@ -858,6 +884,8 @@ function gameOver(){
   state.phase = 'idle';
   document.getElementById('go-score').textContent = `${state.playerName} — ${state.score} pontos`;
   document.getElementById('overlay-gameover').classList.add('active');
+  // demonstracao: a primeira derrota abre a tela de venda (uma vez so; depois fica o botao "Jogo completo")
+  if(PREVIA && !vendaVista){ vendaVista = true; setTimeout(()=>EJAVenda.mostrar('fim'), 900); }
 }
 
 // ===========================
@@ -1175,6 +1203,13 @@ document.addEventListener('keydown',e=>{
 // INIT
 // ===========================
 buildYearGrid();
+if(PREVIA){
+  const jogoCompleto = document.createElement('button');
+  jogoCompleto.className = 'btn-replay btn-venda';
+  jogoCompleto.textContent = '🔓 JOGO COMPLETO';
+  jogoCompleto.onclick = () => EJAVenda.mostrar('recurso');
+  document.querySelector('#overlay-gameover .overlay-card').appendChild(jogoCompleto);
+}
 
 // Enter key on name input
 document.getElementById('inp-name').addEventListener('keydown',e=>{
